@@ -1,103 +1,309 @@
-import Image from "next/image";
+"use client";
+
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
+import { calculateFuzzyOutput } from "@/lib/fuzzy-logic";
+import { TemperatureChart } from "@/components/temperature-chart";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [temperature, setTemperature] = useState(25);
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const result = calculateFuzzyOutput(temperature);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Function to calculate temperature from mouse/touch position
+  const calculateTemperature = (clientX: number) => {
+    if (!sliderRef.current) return;
+
+    const rect = sliderRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percentage = x / rect.width;
+    return Math.round((10 + percentage * 30) * 10) / 10; // 10°C to 40°C with 0.1 step
+  };
+
+  // Handle click on slider track
+  const handleSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const newTemp = calculateTemperature(e.clientX);
+    if (newTemp !== undefined) setTemperature(newTemp);
+  };
+
+  // Handle mouse down on thumb
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  // Handle touch start on thumb
+  const handleTouchStart = () => {
+    setIsDragging(true);
+  };
+
+  // Effect for handling drag events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newTemp = calculateTemperature(e.clientX);
+        if (newTemp !== undefined) setTemperature(newTemp);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging && e.touches[0]) {
+        const newTemp = calculateTemperature(e.touches[0].clientX);
+        if (newTemp !== undefined) setTemperature(newTemp);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    // Add event listeners
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("touchmove", handleTouchMove);
+    document.addEventListener("touchend", handleTouchEnd);
+
+    // Clean up
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isDragging]);
+
+  return (
+    <main className="main">
+      <div className="container">
+        <header className="header">
+          <h1 className="title">Sistem Pakar Kondisi Suhu Ruangan</h1>
+          <p className="subtitle">Menggunakan Metode Fuzzy Sugeno</p>
+        </header>
+
+        <div className="grid grid-cols-2">
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Input Suhu</h2>
+              <p className="card-description">
+                Masukkan suhu ruangan dalam derajat Celcius
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="slider-container">
+                <div className="slider-header">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-blue-600"
+                  >
+                    <path d="M2 12h10" />
+                    <path d="M9 4v16" />
+                    <path d="M3 9v6" />
+                    <path d="M13 6V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3" />
+                    <path d="M13 10v4" />
+                    <path d="m20 2-3 3" />
+                    <path d="m20 22-3-3" />
+                    <path d="m22 5-5 5" />
+                    <path d="m22 19-5-5" />
+                  </svg>
+                  <span className="temperature-value">{temperature}°C</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-red-600"
+                  >
+                    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+                    <path d="M10 13V4" />
+                    <path d="m7 17 3-3 3 3" />
+                  </svg>
+                </div>
+                <div
+                  className="slider"
+                  onClick={handleSliderClick}
+                  ref={sliderRef}
+                >
+                  <div
+                    className="slider-track"
+                    style={{ width: `${((temperature - 10) / 30) * 100}%` }}
+                  ></div>
+                  <div
+                    className="slider-thumb"
+                    style={{ left: `${((temperature - 10) / 30) * 100}%` }}
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
+                  ></div>
+                </div>
+                <div className="slider-labels">
+                  <span>10°C</span>
+                  <span>25°C</span>
+                  <span>40°C</span>
+                </div>
+
+                {/* Tambahkan input manual untuk nilai suhu */}
+                <div className="manual-input">
+                  <label
+                    htmlFor="temperature-input"
+                    className="manual-input-label"
+                  >
+                    Input manual:
+                  </label>
+                  <input
+                    type="number"
+                    id="temperature-input"
+                    min="10"
+                    max="40"
+                    step="0.1"
+                    value={temperature}
+                    onChange={(e) => {
+                      const value = Number.parseFloat(e.target.value);
+                      if (!isNaN(value) && value >= 10 && value <= 40) {
+                        setTemperature(value);
+                      }
+                    }}
+                    className="manual-input-field"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Hasil Analisis</h2>
+              <p className="card-description">
+                Kondisi suhu ruangan berdasarkan input
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="result-header">
+                <div className="result-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={getTemperatureIconColor(result.condition)}
+                  >
+                    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="result-title">{result.condition}</h3>
+                  <p className="result-subtitle">
+                    Derajat keanggotaan: {result.degree.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div>
+                {result.memberships.map((item) => (
+                  <div key={item.set} className="membership-item">
+                    <span className="membership-label">{item.set}</span>
+                    <div className="membership-bar">
+                      <div
+                        className={`membership-value ${getMembershipColor(
+                          item.set
+                        )}`}
+                        style={{ width: `${item.degree * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="membership-percentage">
+                      {(item.degree * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="card col-span-2">
+            <div className="card-header">
+              <h2 className="card-title">Visualisasi Fungsi Keanggotaan</h2>
+              <p className="card-description">
+                Grafik fungsi keanggotaan fuzzy untuk suhu ruangan
+              </p>
+            </div>
+            <div className="card-content">
+              <TemperatureChart currentTemperature={temperature} />
+              <div className="chart-legend">
+                <p className="legend-title">Keterangan:</p>
+                <p>
+                  • Titik hitam pada setiap kurva menunjukkan derajat
+                  keanggotaan suhu saat ini ({temperature}°C) pada masing-masing
+                  kategori.
+                </p>
+                <p>
+                  • Garis putus-putus vertikal menunjukkan posisi suhu saat ini
+                  pada skala.
+                </p>
+                <p>
+                  • Semakin tinggi posisi titik pada kurva, semakin tinggi
+                  derajat keanggotaan suhu tersebut pada kategori yang
+                  bersangkutan.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
+}
+
+function getTemperatureIconColor(condition: string) {
+  switch (condition) {
+    case "Dingin":
+      return "text-blue-600";
+    case "Sejuk":
+      return "text-blue-400";
+    case "Normal":
+      return "text-green-500";
+    case "Panas":
+      return "text-orange-500";
+    case "Sangat Panas":
+      return "text-red-600";
+    default:
+      return "";
+  }
+}
+
+function getMembershipColor(set: string) {
+  switch (set) {
+    case "Dingin":
+      return "bg-blue-600";
+    case "Sejuk":
+      return "bg-blue-400";
+    case "Normal":
+      return "bg-green-500";
+    case "Panas":
+      return "bg-orange-500";
+    case "Sangat Panas":
+      return "bg-red-600";
+    default:
+      return "";
+  }
 }
