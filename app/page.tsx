@@ -1,66 +1,96 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useRef, useEffect } from "react";
 import { calculateFuzzyOutput } from "@/lib/fuzzy-logic";
 import { TemperatureChart } from "@/components/temperature-chart";
+import { HumidityChart } from "@/components/humidity-chart";
 
 export default function Home() {
   const [temperature, setTemperature] = useState(25);
-  const [isDragging, setIsDragging] = useState(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const result = calculateFuzzyOutput(temperature);
+  const [humidity, setHumidity] = useState(50);
+  const [isDraggingTemp, setIsDraggingTemp] = useState(false);
+  const [isDraggingHumidity, setIsDraggingHumidity] = useState(false);
+  const tempSliderRef = useRef<HTMLDivElement>(null);
+  const humiditySliderRef = useRef<HTMLDivElement>(null);
+  const result = calculateFuzzyOutput(temperature, humidity);
 
   // Function to calculate temperature from mouse/touch position
   const calculateTemperature = (clientX: number) => {
-    if (!sliderRef.current) return;
+    if (!tempSliderRef.current) return;
 
-    const rect = sliderRef.current.getBoundingClientRect();
+    const rect = tempSliderRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const percentage = x / rect.width;
     return Math.round((10 + percentage * 30) * 10) / 10; // 10°C to 40°C with 0.1 step
   };
 
-  // Handle click on slider track
-  const handleSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Function to calculate humidity from mouse/touch position
+  const calculateHumidity = (clientX: number) => {
+    if (!humiditySliderRef.current) return;
+
+    const rect = humiditySliderRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    const percentage = x / rect.width;
+    return Math.round(percentage * 100); // 0% to 100%
+  };
+
+  // Handle click on temperature slider track
+  const handleTempSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const newTemp = calculateTemperature(e.clientX);
     if (newTemp !== undefined) setTemperature(newTemp);
   };
 
-  // Handle mouse down on thumb
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Handle click on humidity slider track
+  const handleHumiditySliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const newHumidity = calculateHumidity(e.clientX);
+    if (newHumidity !== undefined) setHumidity(newHumidity);
+  };
+
+  // Handle mouse down on temperature thumb
+  const handleTempMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true);
+    setIsDraggingTemp(true);
   };
 
-  // Handle touch start on thumb
-  const handleTouchStart = () => {
-    setIsDragging(true);
+  // Handle mouse down on humidity thumb
+  const handleHumidityMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingHumidity(true);
   };
 
-  // Effect for handling drag events
+  // Handle touch start on temperature thumb
+  const handleTempTouchStart = () => {
+    setIsDraggingTemp(true);
+  };
+
+  // Handle touch start on humidity thumb
+  const handleHumidityTouchStart = () => {
+    setIsDraggingHumidity(true);
+  };
+
+  // Effect for handling temperature drag events
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
+      if (isDraggingTemp) {
         const newTemp = calculateTemperature(e.clientX);
         if (newTemp !== undefined) setTemperature(newTemp);
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (isDragging && e.touches[0]) {
+      if (isDraggingTemp && e.touches[0]) {
         const newTemp = calculateTemperature(e.touches[0].clientX);
         if (newTemp !== undefined) setTemperature(newTemp);
       }
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      setIsDraggingTemp(false);
     };
 
     const handleTouchEnd = () => {
-      setIsDragging(false);
+      setIsDraggingTemp(false);
     };
 
     // Add event listeners
@@ -76,13 +106,52 @@ export default function Home() {
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isDragging]);
+  }, [isDraggingTemp]);
+
+  // Effect for handling humidity drag events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingHumidity) {
+        const newHumidity = calculateHumidity(e.clientX);
+        if (newHumidity !== undefined) setHumidity(newHumidity);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDraggingHumidity && e.touches[0]) {
+        const newHumidity = calculateHumidity(e.touches[0].clientX);
+        if (newHumidity !== undefined) setHumidity(newHumidity);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingHumidity(false);
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingHumidity(false);
+    };
+
+    // Add event listeners
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("touchmove", handleTouchMove);
+    document.addEventListener("touchend", handleTouchEnd);
+
+    // Clean up
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isDraggingHumidity]);
 
   return (
     <main className="main">
       <div className="container">
         <header className="header">
-          <h1 className="title">Sistem Pakar Kondisi Suhu Ruangan</h1>
+          <h1 className="title">Sistem Pakar Prediksi Cuaca</h1>
           <p className="subtitle">Menggunakan Metode Fuzzy Sugeno</p>
         </header>
 
@@ -91,7 +160,7 @@ export default function Home() {
             <div className="card-header">
               <h2 className="card-title">Input Suhu</h2>
               <p className="card-description">
-                Masukkan suhu ruangan dalam derajat Celcius
+                Masukkan suhu dalam derajat Celcius
               </p>
             </div>
             <div className="card-content">
@@ -109,38 +178,15 @@ export default function Home() {
                     strokeLinejoin="round"
                     className="text-blue-600"
                   >
-                    <path d="M2 12h10" />
-                    <path d="M9 4v16" />
-                    <path d="M3 9v6" />
-                    <path d="M13 6V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3" />
-                    <path d="M13 10v4" />
-                    <path d="m20 2-3 3" />
-                    <path d="m20 22-3-3" />
-                    <path d="m22 5-5 5" />
-                    <path d="m22 19-5-5" />
-                  </svg>
-                  <span className="temperature-value">{temperature}°C</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-red-600"
-                  >
                     <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
                     <path d="M10 13V4" />
-                    <path d="m7 17 3-3 3 3" />
                   </svg>
+                  <span className="temperature-value">{temperature}°C</span>
                 </div>
                 <div
                   className="slider"
-                  onClick={handleSliderClick}
-                  ref={sliderRef}
+                  onClick={handleTempSliderClick}
+                  ref={tempSliderRef}
                 >
                   <div
                     className="slider-track"
@@ -149,8 +195,8 @@ export default function Home() {
                   <div
                     className="slider-thumb"
                     style={{ left: `${((temperature - 10) / 30) * 100}%` }}
-                    onMouseDown={handleMouseDown}
-                    onTouchStart={handleTouchStart}
+                    onMouseDown={handleTempMouseDown}
+                    onTouchStart={handleTempTouchStart}
                   ></div>
                 </div>
                 <div className="slider-labels">
@@ -159,7 +205,7 @@ export default function Home() {
                   <span>40°C</span>
                 </div>
 
-                {/* Tambahkan input manual untuk nilai suhu */}
+                {/* Input manual untuk nilai suhu */}
                 <div className="manual-input">
                   <label
                     htmlFor="temperature-input"
@@ -189,9 +235,85 @@ export default function Home() {
 
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Hasil Analisis</h2>
+              <h2 className="card-title">Input Kelembapan</h2>
               <p className="card-description">
-                Kondisi suhu ruangan berdasarkan input
+                Masukkan kelembapan dalam persentase
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="slider-container">
+                <div className="slider-header">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-blue-600"
+                  >
+                    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+                  </svg>
+                  <span className="temperature-value">{humidity}%</span>
+                </div>
+                <div
+                  className="slider"
+                  onClick={handleHumiditySliderClick}
+                  ref={humiditySliderRef}
+                >
+                  <div
+                    className="slider-track slider-track-orange"
+                    style={{ width: `${humidity}%` }}
+                  ></div>
+                  <div
+                    className="slider-thumb slider-thumb-orange"
+                    style={{ left: `${humidity}%` }}
+                    onMouseDown={handleHumidityMouseDown}
+                    onTouchStart={handleHumidityTouchStart}
+                  ></div>
+                </div>
+                <div className="slider-labels">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+
+                {/* Input manual untuk nilai kelembapan */}
+                <div className="manual-input">
+                  <label
+                    htmlFor="humidity-input"
+                    className="manual-input-label"
+                  >
+                    Input manual:
+                  </label>
+                  <input
+                    type="number"
+                    id="humidity-input"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={humidity}
+                    onChange={(e) => {
+                      const value = Number.parseInt(e.target.value);
+                      if (!isNaN(value) && value >= 0 && value <= 100) {
+                        setHumidity(value);
+                      }
+                    }}
+                    className="manual-input-field"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card col-span-2">
+            <div className="card-header">
+              <h2 className="card-title">Hasil Prediksi Cuaca</h2>
+              <p className="card-description">
+                Kondisi cuaca berdasarkan suhu dan kelembapan
               </p>
             </div>
             <div className="card-content">
@@ -207,9 +329,9 @@ export default function Home() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={getTemperatureIconColor(result.condition)}
+                    className={getWeatherIconColor(result.condition)}
                   >
-                    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+                    {getWeatherIcon(result.condition)}
                   </svg>
                 </div>
                 <div>
@@ -219,13 +341,13 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              <div>
+              <div className="membership-container">
                 {result.memberships.map((item) => (
                   <div key={item.set} className="membership-item">
                     <span className="membership-label">{item.set}</span>
                     <div className="membership-bar">
                       <div
-                        className={`membership-value ${getMembershipColor(
+                        className={`membership-value ${getWeatherMembershipColor(
                           item.set
                         )}`}
                         style={{ width: `${item.degree * 100}%` }}
@@ -240,11 +362,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="card col-span-2">
+          <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Visualisasi Fungsi Keanggotaan</h2>
+              <h2 className="card-title">Fungsi Keanggotaan Suhu</h2>
               <p className="card-description">
-                Grafik fungsi keanggotaan fuzzy untuk suhu ruangan
+                Grafik fungsi keanggotaan fuzzy untuk suhu
               </p>
             </div>
             <div className="card-content">
@@ -252,19 +374,124 @@ export default function Home() {
               <div className="chart-legend">
                 <p className="legend-title">Keterangan:</p>
                 <p>
-                  • Titik hitam pada setiap kurva menunjukkan derajat
-                  keanggotaan suhu saat ini ({temperature}°C) pada masing-masing
-                  kategori.
+                  • Titik hitam menunjukkan derajat keanggotaan suhu saat ini (
+                  {temperature}°C).
                 </p>
                 <p>
                   • Garis putus-putus vertikal menunjukkan posisi suhu saat ini
                   pada skala.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Fungsi Keanggotaan Kelembapan</h2>
+              <p className="card-description">
+                Grafik fungsi keanggotaan fuzzy untuk kelembapan
+              </p>
+            </div>
+            <div className="card-content">
+              <HumidityChart currentHumidity={humidity} />
+              <div className="chart-legend">
+                <p className="legend-title">Keterangan:</p>
                 <p>
-                  • Semakin tinggi posisi titik pada kurva, semakin tinggi
-                  derajat keanggotaan suhu tersebut pada kategori yang
-                  bersangkutan.
+                  • Titik hitam menunjukkan derajat keanggotaan kelembapan saat
+                  ini ({humidity}%).
                 </p>
+                <p>
+                  • Garis putus-putus vertikal menunjukkan posisi kelembapan
+                  saat ini pada skala.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card col-span-2">
+            <div className="card-header">
+              <h2 className="card-title">Aturan Fuzzy</h2>
+              <p className="card-description">
+                Aturan fuzzy yang digunakan dalam sistem
+              </p>
+            </div>
+            <div className="card-content">
+              <div className="rules-container">
+                <div className="rule-item">
+                  <span className="rule-number">1.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Sangat Panas DAN Kelembapan = Kering MAKA Cuaca
+                    = Panas
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">2.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Panas DAN Kelembapan = Kering MAKA Cuaca = Panas
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">3.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Sangat Panas DAN Kelembapan = Sedang MAKA Cuaca
+                    = Cerah
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">4.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Panas DAN Kelembapan = Sedang MAKA Cuaca = Cerah
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">5.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Normal DAN Kelembapan = Kering MAKA Cuaca =
+                    Cerah
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">6.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Normal DAN Kelembapan = Sedang MAKA Cuaca =
+                    Berawan
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">7.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Sejuk DAN Kelembapan = Sedang MAKA Cuaca =
+                    Berawan
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">8.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Normal DAN Kelembapan = Lembab MAKA Cuaca =
+                    Berawan
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">9.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Sejuk DAN Kelembapan = Lembab MAKA Cuaca =
+                    Gerimis
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">10.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Dingin DAN Kelembapan = Sedang MAKA Cuaca =
+                    Gerimis
+                  </span>
+                </div>
+                <div className="rule-item">
+                  <span className="rule-number">11.</span>
+                  <span className="rule-text">
+                    JIKA Suhu = Dingin DAN Kelembapan = Lembab MAKA Cuaca =
+                    Hujan Lebat
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -274,36 +501,102 @@ export default function Home() {
   );
 }
 
-function getTemperatureIconColor(condition: string) {
+function getWeatherIcon(condition: string) {
   switch (condition) {
-    case "Dingin":
-      return "text-blue-600";
-    case "Sejuk":
-      return "text-blue-400";
-    case "Normal":
-      return "text-green-500";
     case "Panas":
-      return "text-orange-500";
-    case "Sangat Panas":
-      return "text-red-600";
+      return (
+        <>
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </>
+      );
+    case "Cerah":
+      return (
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </>
+      );
+    case "Berawan":
+      return (
+        <>
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+        </>
+      );
+    case "Gerimis":
+      return (
+        <>
+          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+          <path d="M8 19v1" />
+          <path d="M8 14v1" />
+          <path d="M16 19v1" />
+          <path d="M16 14v1" />
+          <path d="M12 21v1" />
+          <path d="M12 16v1" />
+        </>
+      );
+    case "Hujan Lebat":
+      return (
+        <>
+          <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+          <path d="M16 14v6" />
+          <path d="M8 14v6" />
+          <path d="M12 16v6" />
+        </>
+      );
     default:
-      return "";
+      return (
+        <>
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+        </>
+      );
   }
 }
 
-function getMembershipColor(set: string) {
-  switch (set) {
-    case "Dingin":
-      return "bg-blue-600";
-    case "Sejuk":
-      return "bg-blue-400";
-    case "Normal":
-      return "bg-green-500";
+function getWeatherIconColor(condition: string) {
+  switch (condition) {
     case "Panas":
-      return "bg-orange-500";
-    case "Sangat Panas":
-      return "bg-red-600";
+      return "text-red-600";
+    case "Cerah":
+      return "text-yellow-500";
+    case "Berawan":
+      return "text-gray-500";
+    case "Gerimis":
+      return "text-blue-400";
+    case "Hujan Lebat":
+      return "text-blue-600";
     default:
-      return "";
+      return "text-gray-500";
+  }
+}
+
+function getWeatherMembershipColor(set: string) {
+  switch (set) {
+    case "Panas":
+      return "bg-red-600";
+    case "Cerah":
+      return "bg-yellow-500";
+    case "Berawan":
+      return "bg-gray-500";
+    case "Gerimis":
+      return "bg-blue-400";
+    case "Hujan Lebat":
+      return "bg-blue-600";
+    default:
+      return "bg-gray-500";
   }
 }

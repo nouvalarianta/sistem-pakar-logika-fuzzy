@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getTemperatureMembershipValues } from "@/lib/fuzzy-logic";
+import { getHumidityMembershipValues } from "@/lib/fuzzy-logic";
 
-interface TemperatureChartProps {
-  currentTemperature: number;
+interface HumidityChartProps {
+  currentHumidity: number;
 }
 
-export function TemperatureChart({
-  currentTemperature,
-}: TemperatureChartProps) {
+export function HumidityChart({ currentHumidity }: HumidityChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -24,7 +22,7 @@ export function TemperatureChart({
     canvas.height = canvas.offsetHeight;
 
     // Get membership values for the chart
-    const membershipValues = getTemperatureMembershipValues(10, 40, 0.5);
+    const membershipValues = getHumidityMembershipValues(0, 100, 1);
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -51,9 +49,9 @@ export function TemperatureChart({
     ctx.fillStyle = "#666";
     ctx.font = "10px Arial";
 
-    for (let temp = 10; temp <= 40; temp += 5) {
-      const x = chartLeft + ((temp - 10) / 30) * chartWidth;
-      ctx.fillText(`${temp}°C`, x, chartBottom + 5);
+    for (let humidity = 0; humidity <= 100; humidity += 20) {
+      const x = chartLeft + (humidity / 100) * chartWidth;
+      ctx.fillText(`${humidity}%`, x, chartBottom + 5);
     }
 
     // Draw Y axis labels
@@ -69,8 +67,8 @@ export function TemperatureChart({
     const drawMembershipFunction = (values: number[], color: string) => {
       ctx.beginPath();
       values.forEach((value, index) => {
-        const temp = 10 + index * 0.5;
-        const x = chartLeft + ((temp - 10) / 30) * chartWidth;
+        const humidity = index;
+        const x = chartLeft + (humidity / 100) * chartWidth;
         const y = chartBottom - value * chartHeight;
 
         if (index === 0) {
@@ -86,28 +84,20 @@ export function TemperatureChart({
 
     // Draw each membership function
     drawMembershipFunction(
-      membershipValues.map((v) => v.dingin),
-      "#3b82f6" // Blue
+      membershipValues.map((v) => v.kering),
+      "#d97706" // Amber
     );
     drawMembershipFunction(
-      membershipValues.map((v) => v.sejuk),
-      "#60a5fa" // Light blue
+      membershipValues.map((v) => v.sedang),
+      "#059669" // Emerald
     );
     drawMembershipFunction(
-      membershipValues.map((v) => v.normal),
-      "#22c55e" // Green
-    );
-    drawMembershipFunction(
-      membershipValues.map((v) => v.panas),
-      "#f97316" // Orange
-    );
-    drawMembershipFunction(
-      membershipValues.map((v) => v.sangatPanas),
-      "#ef4444" // Red
+      membershipValues.map((v) => v.lembab),
+      "#2563eb" // Blue
     );
 
-    // Draw vertical line for current temperature
-    const currentX = chartLeft + ((currentTemperature - 10) / 30) * chartWidth;
+    // Draw vertical line for current humidity
+    const currentX = chartLeft + (currentHumidity / 100) * chartWidth;
     ctx.beginPath();
     ctx.moveTo(currentX, padding);
     ctx.lineTo(currentX, chartBottom);
@@ -119,7 +109,7 @@ export function TemperatureChart({
 
     // Get current membership degrees
     const currentIndex = Math.round(
-      ((currentTemperature - 10) / 30) * membershipValues.length
+      (currentHumidity / 100) * membershipValues.length
     );
     const currentValues = membershipValues[currentIndex] || membershipValues[0];
 
@@ -142,11 +132,9 @@ export function TemperatureChart({
       }
     };
 
-    drawMembershipPoint(currentValues.dingin, "#3b82f6");
-    drawMembershipPoint(currentValues.sejuk, "#60a5fa");
-    drawMembershipPoint(currentValues.normal, "#22c55e");
-    drawMembershipPoint(currentValues.panas, "#f97316");
-    drawMembershipPoint(currentValues.sangatPanas, "#ef4444");
+    drawMembershipPoint(currentValues.kering, "#d97706");
+    drawMembershipPoint(currentValues.sedang, "#059669");
+    drawMembershipPoint(currentValues.lembab, "#2563eb");
 
     // Draw legend
     const legendX = chartLeft + 10;
@@ -170,16 +158,15 @@ export function TemperatureChart({
       legendY += legendSpacing;
     };
 
-    drawLegendItem("Dingin", "#3b82f6");
-    drawLegendItem("Sejuk", "#60a5fa");
-    drawLegendItem("Normal", "#22c55e");
-    drawLegendItem("Panas", "#f97316");
-    drawLegendItem("Sangat Panas", "#ef4444");
-  }, [currentTemperature]);
+    drawLegendItem("Kering", "#d97706");
+    drawLegendItem("Sedang", "#059669");
+    drawLegendItem("Lembab", "#2563eb");
+  }, [currentHumidity]);
 
   return (
     <div className="chart-container">
       <canvas ref={canvasRef} className="chart-canvas"></canvas>
     </div>
   );
+  
 }

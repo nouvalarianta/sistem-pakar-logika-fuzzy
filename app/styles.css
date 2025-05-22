@@ -178,25 +178,28 @@ body {
   color: #6c757d;
 }
 
+.membership-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
 .membership-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .membership-label {
   font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .membership-bar {
-  flex: 1;
-  max-width: 200px;
   height: 0.5rem;
   background-color: #e9ecef;
   border-radius: 9999px;
   overflow: hidden;
-  margin: 0 0.5rem;
 }
 
 .membership-value {
@@ -204,8 +207,9 @@ body {
 }
 
 .membership-percentage {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  color: #6c757d;
+  align-self: flex-end;
 }
 
 /* Chart */
@@ -234,6 +238,27 @@ body {
   margin-bottom: 0.25rem;
 }
 
+/* Rules */
+.rules-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.75rem;
+}
+
+.rule-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.rule-number {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
 /* Colors */
 .text-blue-600 {
   color: #2563eb;
@@ -250,6 +275,12 @@ body {
 .text-red-600 {
   color: #dc2626;
 }
+.text-yellow-500 {
+  color: #eab308;
+}
+.text-gray-500 {
+  color: #6b7280;
+}
 
 .bg-blue-600 {
   background-color: #2563eb;
@@ -265,6 +296,12 @@ body {
 }
 .bg-red-600 {
   background-color: #dc2626;
+}
+.bg-yellow-500 {
+  background-color: #eab308;
+}
+.bg-gray-500 {
+  background-color: #6b7280;
 }
 
 .manual-input {
@@ -292,4 +329,18 @@ body {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* Slider kelembapan dengan warna oranye */
+.slider-track-orange {
+  background-color: #f97316; /* warna oranye */
+}
+
+.slider-thumb-orange {
+  border-color: #f97316; /* warna oranye */
+}
+
+.slider-thumb-orange:hover,
+.slider-thumb-orange:active {
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
 }
