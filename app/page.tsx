@@ -3,8 +3,6 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { calculateFuzzyOutput } from "@/lib/fuzzy-logic";
-import { TemperatureChart } from "@/components/temperature-chart";
-import { HumidityChart } from "@/components/humidity-chart";
 
 export default function Home() {
   const [temperature, setTemperature] = useState(25);
@@ -205,7 +203,6 @@ export default function Home() {
                   <span>40°C</span>
                 </div>
 
-                {/* Input manual untuk nilai suhu */}
                 <div className="manual-input">
                   <label
                     htmlFor="temperature-input"
@@ -253,7 +250,7 @@ export default function Home() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-blue-600"
+                    className="text-orange-500"
                   >
                     <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
                   </svg>
@@ -281,7 +278,6 @@ export default function Home() {
                   <span>100%</span>
                 </div>
 
-                {/* Input manual untuk nilai kelembapan */}
                 <div className="manual-input">
                   <label
                     htmlFor="humidity-input"
@@ -317,93 +313,47 @@ export default function Home() {
               </p>
             </div>
             <div className="card-content">
-              <div className="result-header">
-                <div className="result-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={getWeatherIconColor(result.condition)}
-                  >
-                    {getWeatherIcon(result.condition)}
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="result-title">{result.condition}</h3>
-                  <p className="result-subtitle">
-                    Derajat keanggotaan: {result.degree.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-              <div className="membership-container">
-                {result.memberships.map((item) => (
-                  <div key={item.set} className="membership-item">
-                    <span className="membership-label">{item.set}</span>
-                    <div className="membership-bar">
-                      <div
-                        className={`membership-value ${getWeatherMembershipColor(
-                          item.set
-                        )}`}
-                        style={{ width: `${item.degree * 100}%` }}
-                      ></div>
+              <div className="weather-breakdown">
+                <h3 className="card-title">Detail Probabilitas Cuaca</h3>
+                <div className="weather-grid">
+                  {result.memberships.map((item) => (
+                    <div key={item.set} className="weather-card">
+                      <div className="weather-card-header">
+                        <div
+                          className={`weather-card-icon ${getWeatherIconColor(
+                            item.set
+                          )}`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="32"
+                            height="32"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            {getWeatherIcon(item.set)}
+                          </svg>
+                        </div>
+                        <span className="weather-card-name">{item.set}</span>
+                      </div>
+                      <div className="weather-card-percentage">
+                        {(item.degree * 100).toFixed(0)}%
+                      </div>
+                      <div className="weather-card-bar">
+                        <div
+                          className={`weather-card-fill ${getWeatherMembershipColor(
+                            item.set
+                          )}`}
+                          style={{ width: `${item.degree * 100}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <span className="membership-percentage">
-                      {(item.degree * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Fungsi Keanggotaan Suhu</h2>
-              <p className="card-description">
-                Grafik fungsi keanggotaan fuzzy untuk suhu
-              </p>
-            </div>
-            <div className="card-content">
-              <TemperatureChart currentTemperature={temperature} />
-              <div className="chart-legend">
-                <p className="legend-title">Keterangan:</p>
-                <p>
-                  • Titik hitam menunjukkan derajat keanggotaan suhu saat ini (
-                  {temperature}°C).
-                </p>
-                <p>
-                  • Garis putus-putus vertikal menunjukkan posisi suhu saat ini
-                  pada skala.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Fungsi Keanggotaan Kelembapan</h2>
-              <p className="card-description">
-                Grafik fungsi keanggotaan fuzzy untuk kelembapan
-              </p>
-            </div>
-            <div className="card-content">
-              <HumidityChart currentHumidity={humidity} />
-              <div className="chart-legend">
-                <p className="legend-title">Keterangan:</p>
-                <p>
-                  • Titik hitam menunjukkan derajat keanggotaan kelembapan saat
-                  ini ({humidity}%).
-                </p>
-                <p>
-                  • Garis putus-putus vertikal menunjukkan posisi kelembapan
-                  saat ini pada skala.
-                </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
